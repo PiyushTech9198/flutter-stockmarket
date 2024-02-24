@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_2/stock_data_model.dart';
 import 'package:get/get.dart';
 import 'package:web_socket_channel/io.dart';
 
@@ -8,13 +9,16 @@ class HomeScreenController extends GetxController {
   var selectedIndex = 0.obs;
   final marketOrderChannel = IOWebSocketChannel.connect(
       'ws://stream.bit24hr.in:8765/btc_market_history');
-  RxList<dynamic> data = <dynamic>[].obs;
+  RxList<StockData> data = <StockData>[].obs;
 
   @override
   void onInit() {
     super.onInit();
     marketOrderChannel.stream.listen((event) {
-      List<dynamic> jsonData = json.decode(event.toString());
+      List<StockData> jsonData =
+          (json.decode(event.toString()) as List<dynamic>)
+              .map((item) => StockData.fromJson(item))
+              .toList();
       data.assignAll(jsonData);
       update(); // Force UI update
     }, onError: (error) {
@@ -152,7 +156,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMarketOrderListView(List<dynamic> data) {
+  Widget _buildMarketOrderListView(List<StockData> data) {
     return ListView.builder(
       itemCount: data.length + 1, // Add 1 for the header row
       itemBuilder: (context, index) {
@@ -209,21 +213,21 @@ class HomeScreen extends StatelessWidget {
           var item =
               data[index - 1]; // Subtract 1 to account for the header row
           // Check if the previous price is available
-          double previousPrice = index > 1 ? data[index - 2]['rate'] : 0.0;
+          double previousPrice = index > 1 ? data[index - 2].rate : 0.0;
           // Determine the color based on price change
-          Color priceColor = item['rate'] < previousPrice
+          Color priceColor = item.rate < previousPrice
               ? Colors.red
-              : item['rate'] > previousPrice
+              : item.rate > previousPrice
                   ? Colors.green
                   : Colors.white;
           // Determine the arrow icon
-          IconData? arrowIcon = item['rate'] < previousPrice
+          IconData? arrowIcon = item.rate < previousPrice
               ? Icons.arrow_downward
-              : item['rate'] > previousPrice
+              : item.rate > previousPrice
                   ? Icons.arrow_upward
                   : null;
           // Format the price to display with only two decimal places
-          String formattedPrice = (item['rate'] as double).toStringAsFixed(2);
+          String formattedPrice = (item.rate as double).toStringAsFixed(2);
           return Container(
             padding:
                 const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
@@ -247,7 +251,7 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(width: 16.0),
                 Expanded(
                   child: Text(
-                    '${item['volume']}',
+                    '${item.volume}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 14,
@@ -259,7 +263,7 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(width: 16.0),
                 Expanded(
                   child: Text(
-                    '${item['timestamp']}',
+                    '${item.timestamp}',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
