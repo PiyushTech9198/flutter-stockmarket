@@ -150,7 +150,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildMarketOrderListView(List<dynamic> data) {
     return ListView.builder(
-      itemCount: data.length + 1, // Add 1 for the header row
+      itemCount: data.length + 1, 
       itemBuilder: (context, index) {
         if (index == 0) {
           // Header row
