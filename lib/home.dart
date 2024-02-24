@@ -16,6 +16,7 @@ class HomeScreenController extends GetxController {
     marketOrderChannel.stream.listen((event) {
       List<dynamic> jsonData = json.decode(event.toString());
       data.assignAll(jsonData);
+      update(); // Force UI update
     }, onError: (error) {
       if (kDebugMode) {
         print('Error: $error');
@@ -33,9 +34,11 @@ class HomeScreenController extends GetxController {
 class HomeScreen extends StatelessWidget {
   final controller = Get.put(HomeScreenController());
 
-  HomeScreen({super.key});
+  HomeScreen({Key? key}) : super(key: key);
 
-  void setSelectedIndex(int index) {}
+  void setSelectedIndex(int index) {
+    controller.selectedIndex.value = index;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,9 +135,10 @@ class HomeScreen extends StatelessWidget {
             ),
             Expanded(
               child: Obx(() {
+                final data = controller.data; // Access RxList directly
                 return TabBarView(
                   children: [
-                    _buildMarketOrderListView(controller.data),
+                    _buildMarketOrderListView(data),
                     const Center(
                       child: Text("Order Book Content"),
                     )
@@ -150,7 +154,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildMarketOrderListView(List<dynamic> data) {
     return ListView.builder(
-      itemCount: data.length + 1, 
+      itemCount: data.length + 1, // Add 1 for the header row
       itemBuilder: (context, index) {
         if (index == 0) {
           // Header row
