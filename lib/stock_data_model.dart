@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 class StockData {
-  final double rate;
+   double rate;
   final double volume;
   final String orderType;
   final String timestamp;

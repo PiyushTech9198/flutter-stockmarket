@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math'; // Import the math library for random number generation
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_2/stock_data_model.dart';
@@ -11,14 +12,25 @@ class HomeScreenController extends GetxController {
       'ws://stream.bit24hr.in:8765/btc_market_history');
   RxList<StockData> data = <StockData>[].obs;
 
+  // Function to generate a random number and add/subtract it from the rate
+  double generateRandomRate(double rate) {
+    Random random = Random();
+    // Generate a random number between -100 and 100 (adjust range as needed)
+    double randomNumber = (random.nextDouble() * 200) - 100;
+    // Add or subtract the random number from the rate
+    return rate + randomNumber;
+  }
+
   @override
   void onInit() {
     super.onInit();
     marketOrderChannel.stream.listen((event) {
       List<StockData> jsonData =
-          (json.decode(event.toString()) as List<dynamic>)
-              .map((item) => StockData.fromJson(item))
-              .toList();
+          (json.decode(event.toString()) as List<dynamic>).map((item) {
+        // Update the rate using the generateRandomRate function
+        item['rate'] = generateRandomRate(item['rate']);
+        return StockData.fromJson(item);
+      }).toList();
       data.assignAll(jsonData);
       update(); // Force UI update
     }, onError: (error) {
@@ -38,7 +50,7 @@ class HomeScreenController extends GetxController {
 class HomeScreen extends StatelessWidget {
   final controller = Get.put(HomeScreenController());
 
-  HomeScreen({Key? key}) : super(key: key);
+  HomeScreen({super.key});
 
   void setSelectedIndex(int index) {
     controller.selectedIndex.value = index;
@@ -215,11 +227,14 @@ class HomeScreen extends StatelessWidget {
           // Check if the previous price is available
           double previousPrice = index > 1 ? data[index - 2].rate : 0.0;
           // Determine the color based on price change
-          Color priceColor = item.rate < previousPrice
-              ? Colors.red
-              : item.rate > previousPrice
-                  ? Colors.green
-                  : Colors.white;
+          Color priceColor;
+          if (item.rate < previousPrice) {
+            priceColor = Colors.red;
+          } else if (item.rate > previousPrice) {
+            priceColor = Colors.green;
+          } else {
+            priceColor = Colors.white;
+          }
           // Determine the arrow icon
           IconData? arrowIcon = item.rate < previousPrice
               ? Icons.arrow_downward
@@ -227,7 +242,7 @@ class HomeScreen extends StatelessWidget {
                   ? Icons.arrow_upward
                   : null;
           // Format the price to display with only two decimal places
-          String formattedPrice = (item.rate as double).toStringAsFixed(2);
+          String formattedPrice = (item.rate).toStringAsFixed(2);
           return Container(
             padding:
                 const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
@@ -263,7 +278,7 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(width: 16.0),
                 Expanded(
                   child: Text(
-                    '${item.timestamp}',
+                    item.timestamp,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
